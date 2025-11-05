@@ -1,0 +1,52 @@
+clc; close all;
+
+% Parameters
+SNR_dB = 0:5:40;                 % vector of SNR in dB
+SNR_lin = 10.^(SNR_dB/10);       % vector of SNR in linear scale
+nr = 4;                          % number of receive antennas
+nt=4;                            % number of receive antennas
+n = 1000;                        % number of channel realizations
+
+%This is the capacity of fast fading MIMO channel for 9 different given snr
+%values
+C_ergodic_MIMO = zeros(size(SNR_lin));  % [0 0 0 0 0 0 0 0 0]
+C_ergodic_SIMO = zeros(size(SNR_lin));  % [0 0 0 0 0 0 0 0 0]
+
+%now for each value of SNR_lin we have to generate 1000 random channels and
+%then find capacity for each of 1000 channels , averaging these values of
+%capacity will give us the ergodic capacity.
+
+for k = 1:length(SNR_lin)
+    snr = SNR_lin(k);             % iterating over each value of snr out of SNR_lin
+    C_temp_mimo = zeros(1,n);  % a row vector that store instantaneous capacity corresponding to 1000 random channel relaization and a single SNR  value
+    C_temp_simo = zeros(1,n);
+    for t = 1:n
+        %generate channel vector for MIMO
+        H_real = randn(nr,nt);        % matrix (nrxnt) containing random real values normally distributed with 0 mean and variance 1 by def 
+        H_img = randn(nr,nt);         % matrix (nrxnt) containing random img values normally distributed with 0 mean and variance 1 by def 
+        H = (H_real + 1i*H_img)/sqrt(2);  % complex Gaussian, normalized
+        h=H(:,1); % for SIMO 
+        % Compute the eigenvalues of the channel matrix H
+        lambda = eig(H * H');  % Eigenvalues for the capacity calculation
+        % instantaneous capacity corresponding to above h and SNR_lin(k)
+        C_temp_mimo(t) = sum( log2( 1 + (snr/nt) * lambda ) ); % capacity formula of MIMO fixed channel in terms of eigen values of H.H
+        C_temp_simo(t) = log2(1 + norm(h)^2 * snr);
+    end
+    
+    % ergodic capacity (for fast fading channels) corresponding SNR_lin(k)
+    C_ergodic_MIMO(k) = mean(C_temp_mimo);
+    C_ergodic_SIMO(k) = mean(C_temp_simo);
+end
+
+% Display results 
+disp(table(SNR_dB.', SNR_lin.', C_ergodic_MIMO.',C_ergodic_SIMO.','VariableNames', {'SNR_dB','SNR_linear','Capacity_fast_fading_MIMO'}));
+disp(table(lambda.',VariableNames={'Eigen values of H*H'}));
+figure(4);
+plot(SNR_dB, C_ergodic_MIMO, '-o','LineWidth',1.5,'MarkerSize',6, Color=[1 0 0]);
+hold on;
+plot(SNR_dB, C_ergodic_SIMO, '-o','LineWidth',1.5,'MarkerSize',6, color=);
+hold off;
+grid on;
+xlabel('SNR (dB)');
+ylabel('Ergodic Capacity (bits/s/Hz)');
+title('Fast-Fading MIMO Channel Capacity');

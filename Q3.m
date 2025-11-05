@@ -1,0 +1,44 @@
+clear; clc; close all;
+
+% Parameters
+SNR_dB = 0:5:40;                 % vector of SNR in dB
+SNR_lin = 10.^(SNR_dB/10);       % vector of SNR in linear scale
+nr = 4;                          % number of receive antennas
+n = 1000;                        % number of channel realizations
+
+%This is the capacity of fast fading SIMO channel for 9 different given snr
+%values
+C_ergodic_SIMO = zeros(size(SNR_lin));  % [0 0 0 0 0 0 0 0 0]
+
+%now for each value of SNR_lin we have to generate 1000 random channels and
+%then find capacity for each of 1000 channels , averaging these values of
+%capacity will give us the ergodic capacity.
+
+for k = 1:length(SNR_lin)
+    snr = SNR_lin(k);             % iterating over each value of snr out of SNR_lin
+    C_temp = zeros(1,n);  % a row vector that store instantaneous capacity corresponding to 1000 random channel relaization and a single SNR  value
+    
+    for t = 1:n
+        %generate channel vector
+        hreal = randn(nr,1);        % vector (nrx1) containing random real values normally distributed with 0 mean and variance 1 by def 
+        himg = randn(nr,1);         % vector (nrx1) containing random img values normally distributed with 0 mean and variance 1 by def 
+        h = (hreal + 1i*himg)/sqrt(2);  % complex Gaussian, normalized
+        % instantaneous capacity corresponding to above h and SNR_lin(k)
+        C_temp(t) = log2(1 + norm(h)^2 * snr);
+    end
+    
+    % ergodic capacity (for fast fading channels) corresponding SNR_lin(k)
+    C_ergodic_SIMO(k) = mean(C_temp);
+end
+
+
+% Display results 
+disp(table(SNR_dB.', SNR_lin.', C_ergodic_SIMO.','VariableNames', {'SNR_dB','SNR_linear','Capacity_fast_fading_SIMO'}));
+
+figure(3);
+plot(SNR_dB, C_ergodic_SIMO, '-o','LineWidth',1.5,'MarkerSize',6);
+grid on;
+xlabel('SNR (dB)');
+ylabel('Ergodic Capacity (bits/s/Hz)');
+title('Fast-Fading SIMO Channel Capacity');
+

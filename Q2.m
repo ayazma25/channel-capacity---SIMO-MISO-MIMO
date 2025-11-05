@@ -1,0 +1,35 @@
+clear; clc; close all;
+
+% Parameters
+nr = 4;                    % Number of receive antennas
+SNR_dB = 0:5:40;           % SNR in dB vector
+SNR_lin = 10.^(SNR_dB/10); % SNR in linear vector
+
+% Generate channel vector h (nr x 1)
+% condition given : h belongs to CN(0,I(nrx1))
+hreal = randn(nr,1);        % vector (nrx1) containing random real values normally distributed with 0 mean and variance 1 by def 
+himg = randn(nr,1);         % vector (nrx1) containing random img values normally distributed with 0 mean and variance 1 by def 
+h = (hreal + 1i*himg)/sqrt(2);  % complex Gaussian, normalized
+h_norm2 = norm(h)^2; % ||h||^2 
+
+% Capacity with FIXED channel knowledge at both Tx and Rx 
+C_FIXED_SIMO = log2(1 + h_norm2 * SNR_lin);
+% NOTE: here channel is assumed to be fixed and not random, therefore norm_sq of h is not equal to nr
+
+% AWGN SIMO capacity (nr receive antennas)
+C_AWGN_SIMO = log2(1 + nr * SNR_lin);
+% here channel is assumed to be random with standard normal distribution, therefore norm_sq of h = nr
+
+% Display results 
+disp(table(SNR_dB.', SNR_lin.', C_FIXED_SIMO.', C_AWGN_SIMO.','VariableNames', {'SNR_dB','SNR_linear','Capacity_FIXED_SIMO','Capacity_AWGN_SIMO'}));
+
+% Plot
+figure(2);
+plot(SNR_dB, C_FIXED_SIMO, '-o','LineWidth',1.5,'MarkerSize',5);
+hold on;
+plot(SNR_dB, C_AWGN_SIMO, '-s','LineWidth',1.5,'MarkerSize',5, Color=[1 0 0]);
+grid on;
+xlabel('SNR (dB)');
+ylabel('Capacity (bits/s/Hz)');
+title('AWGN SIMO Channel Capacity');
+legend('FIXED SIMO channel capacity','AWGN SIMO','Location','best');
